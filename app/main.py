@@ -13,8 +13,17 @@ def main():
     while True:
         client_socket, client_adress = server_socket.accept()
         print(f"New connection from {client_adress}")
+        print(f"Socket: {client_socket}")
         
-        response = b'HTTP/1.1 200 OK\r\n\r\n'
+        recived = client_socket.recv(1024)
+        
+        if recived == b'GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n':
+            print(f"recived: {recived}")
+            response = b'HTTP/1.1 200 OK\r\n\r\n'
+        else:
+            print(f"recived: {recived}")
+            response = b'HTTP/1.1 404 Not Found\r\n\r\n'
+        
         
         client_socket.sendall(response)
         
