@@ -16,9 +16,18 @@ def open_existing_file(directory, file_name):
     except:
         body = None
     return body
+
+def write_to_file(directory, file_name, post_content):
+    try:
+        with open(f"/{directory}/{file_name}", "w") as f:
+            body = f.write(post_content)
+    except:
+        body = None
+    return body
+    
         
 
-def generate_response(path, path_elements, headers):
+def generate_response(method, path, path_elements, headers, post_content=None):
     if path == '/':
         response = b'HTTP/1.1 200 OK\r\n\r\n'
     elif "echo" in path:
@@ -28,11 +37,15 @@ def generate_response(path, path_elements, headers):
     elif 'files' in path:
         directory = sys.argv[2]
         file_name = path_elements[2]
-        file_content = open_existing_file(directory, file_name)
-        if file_content != None:
-            response = f'HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {len(file_content)}\r\n\r\n{file_content}'.encode()
+        if method == "POST" and post_content != None:
+            file_content = write_to_file(directory, file_name, post_content)
+            response = b'HTTP/1.1 201 Created\r\n\r\n'
         else:
-            response = b'HTTP/1.1 404 Not Found\r\n\r\n'
+            file_content = open_existing_file(directory, file_name)
+            if file_content != None:
+                response = f'HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {len(file_content)}\r\n\r\n{file_content}'.encode()
+            else:
+                response = b'HTTP/1.1 404 Not Found\r\n\r\n'
     else:
         response = b'HTTP/1.1 404 Not Found\r\n\r\n'
         
@@ -56,9 +69,12 @@ def handle_connection(client_socket):
         header_key, header_value = header_line.split(': ', 1)
         headers[header_key] = header_value
     
+    try:
+        post_content = request_lines[-1]
+    except:
+        pass
 
-    
-    response = generate_response(path, path_elements, headers)
+    response = generate_response(method, path, path_elements, headers, post_content)
 
     client_socket.sendall(response)
     
