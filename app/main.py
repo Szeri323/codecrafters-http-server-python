@@ -1,5 +1,5 @@
 import socket
-
+import sys
 # # Constants
 # ROUTES = {
 #     #"echo": handle_echo,
@@ -9,13 +9,30 @@ import socket
 # def handle_echo():
 #     pass
 
-def generate_response(path, path_strings, headers):
+def open_existing_file(directory, file_name):
+    try:
+        with open(f"/{directory}/{file_name}", "r") as f:
+            body = f.read()
+    except:
+        body = None
+    return body
+        
+
+def generate_response(path, path_elements, headers):
     if path == '/':
         response = b'HTTP/1.1 200 OK\r\n\r\n'
     elif "echo" in path:
-        response = f'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(path_strings[2])} \r\n\r\n{path_strings[2]}'.encode()
+        response = f'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(path_elements[2])} \r\n\r\n{path_elements[2]}'.encode()
     elif 'user-agent' in path:
         response = f'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(headers['User-Agent'])} \r\n\r\n{headers['User-Agent']}'.encode()
+    elif 'files' in path:
+        directory = sys.argv[2]
+        file_name = path_elements[2]
+        file_content = open_existing_file(directory, file_name)
+        if file_content != None:
+            response = f'HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {len(file_content)}\r\n\r\n{file_content}'.encode()
+        else:
+            response = b'HTTP/1.1 404 Not Found\r\n\r\n'
     else:
         response = b'HTTP/1.1 404 Not Found\r\n\r\n'
         
@@ -23,6 +40,7 @@ def generate_response(path, path_strings, headers):
 
 def handle_connection(client_socket):
     client_request = client_socket.recv(1024)
+    print(client_request)
     request_lines = client_request.decode()
     request_lines =  request_lines.split("\r\n")
     request_line = request_lines[0]
@@ -45,6 +63,7 @@ def handle_connection(client_socket):
     client_socket.sendall(response)
     
     client_socket.close()
+    print(f"Connection on port: {client_socket} closed.")
 
     
 
