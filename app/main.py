@@ -1,5 +1,6 @@
 import socket
 import sys
+import gzip
 # # Constants
 # ROUTES = {
 #     #"echo": handle_echo,
@@ -8,6 +9,11 @@ import sys
 # # Functions
 # def handle_echo():
 #     pass
+
+
+
+# ADD CASE INSENSITIVE DICTIONARIES
+
 
 def open_existing_file(directory, file_name):
     try:
@@ -37,7 +43,10 @@ def generate_response(method, path, path_elements, headers, post_content=None):
         response = b'HTTP/1.1 200 OK\r\n\r\n'
     elif "echo" in path:
         if check_encoding(headers):
-            response = f'HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: {len(path_elements[2])} \r\n\r\n{path_elements[2]}'.encode()
+            body = path_elements[2].encode()
+            body = gzip.compress(body)
+            response = f'HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: {len(body)} \r\n\r\n'.encode()
+            response = response + body
         else:
             response = f'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(path_elements[2])} \r\n\r\n{path_elements[2]}'.encode()
     elif 'user-agent' in path:
