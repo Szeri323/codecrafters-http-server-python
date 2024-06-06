@@ -27,7 +27,7 @@ def write_to_file(directory, file_name, post_content):
 
 def check_encoding(headers):
         try :
-            check = headers['Accept-Encoding'] == "gzip"
+            check = True if "gzip" in headers['Accept-Encoding'] else False
         except:
             check = False
         return check
