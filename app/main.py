@@ -24,14 +24,22 @@ def write_to_file(directory, file_name, post_content):
     except:
         body = None
     return body
-    
-        
+
+def check_encoding(headers):
+        try :
+            check = headers['Accept-Encoding'] == "gzip"
+        except:
+            check = False
+        return check
 
 def generate_response(method, path, path_elements, headers, post_content=None):
     if path == '/':
         response = b'HTTP/1.1 200 OK\r\n\r\n'
     elif "echo" in path:
-        response = f'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(path_elements[2])} \r\n\r\n{path_elements[2]}'.encode()
+        if check_encoding(headers):
+            response = f'HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Type: text/plain\r\nContent-Length: {len(path_elements[2])} \r\n\r\n{path_elements[2]}'.encode()
+        else:
+            response = f'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(path_elements[2])} \r\n\r\n{path_elements[2]}'.encode()
     elif 'user-agent' in path:
         response = f'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(headers['User-Agent'])} \r\n\r\n{headers['User-Agent']}'.encode()
     elif 'files' in path:
@@ -75,18 +83,15 @@ def handle_connection(client_socket):
         pass
 
     response = generate_response(method, path, path_elements, headers, post_content)
-
     client_socket.sendall(response)
-    
     client_socket.close()
     print(f"Connection on port: {client_socket} closed.")
 
     
 
 def main():
-
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-
+    
     while True:
         client_socket, client_adress = server_socket.accept()
         print(f"New connection from {client_adress}")
